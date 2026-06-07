@@ -9,3 +9,5 @@ dowhy
 pulp 
 scipy 
 pyarrow
+openpyxl
+pytest
