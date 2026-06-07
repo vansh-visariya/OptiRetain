@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiRetain — Customer Retention Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <h1>OptiRetain Retention Dashboard</h1>
+            <p class="subtitle">Risk Radar · Uplift Engine · ROI Maximizer</p>
+        </header>
+
+        <!-- KPI Cards -->
+        <section class="kpi-grid" id="kpi-cards">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Customers</span>
+                <span class="kpi-value" id="kpi-total">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Persuadable</span>
+                <span class="kpi-value" id="kpi-persuadable">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Recommended for Offer</span>
+                <span class="kpi-value" id="kpi-recommended">—</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Avg Uplift (Selected)</span>
+                <span class="kpi-value" id="kpi-avg-uplift">—</span>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <section class="filters">
+            <div class="filter-group">
+                <label for="segment-filter">Segment:</label>
+                <select id="segment-filter">
+                    <option value="all">All Segments</option>
+                    <option value="Persuadable">Persuadable</option>
+                    <option value="Sure Thing">Sure Thing</option>
+                    <option value="Lost Cause">Lost Cause</option>
+                    <option value="Sleeping Dog">Sleeping Dog</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="search-input">Search Customer ID:</label>
+                <input type="text" id="search-input" placeholder="e.g. C-001">
+            </div>
+            <div class="filter-group">
+                <label for="sort-select">Sort by:</label>
+                <select id="sort-select">
+                    <option value="expected_net_lift">Expected Net Lift</option>
+                    <option value="p_churn">Churn Risk</option>
+                    <option value="uplift">Uplift Score</option>
+                    <option value="clv">CLV</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Customer Table -->
+        <section class="table-container">
+            <table id="customer-table">
+                <thead>
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>Segment</th>
+                        <th>P(Churn)</th>
+                        <th>Uplift</th>
+                        <th>CLV</th>
+                        <th>Cost</th>
+                        <th>Net Lift</th>
+                        <th>Recommended</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="8" class="loading">Loading data…</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Detail Panel (waterfall) -->
+        <section class="detail-panel" id="detail-panel">
+            <div class="detail-header">
+                <h2 id="detail-title">Customer Details</h2>
+                <button id="detail-close" class="btn-close">&times;</button>
+            </div>
+            <div class="detail-content">
+                <div class="detail-stats" id="detail-stats"></div>
+                <div class="waterfall-container" id="waterfall-container">
+                    <h3>SHAP Feature Drivers</h3>
+                    <div id="waterfall-chart" class="waterfall-chart"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
