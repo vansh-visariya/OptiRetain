@@ -39,7 +39,7 @@ OptiRetain/
 └── pyproject.toml
 ```
 
-Dependency installation should be done via `pip install` / `poetry add` (per project rules), not by editing `pyproject.toml` by hand:
+Dependency installation should be done via `uv pip install` / `poetry add` (per project rules), not by editing `pyproject.toml` by hand:
 
 ```
 pandas numpy scikit-learn xgboost lightgbm shap econml dowhy pulp scipy pyarrow
