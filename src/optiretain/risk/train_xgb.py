@@ -1,4 +1,4 @@
-"""Layer 3 — Risk Radar: train and persist an XGBoost churn-risk model.
+""" Risk Radar: train and persist an XGBoost churn-risk model.
 
 This module performs three operations in sequence:
 
@@ -33,14 +33,13 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
-from sklearn.utils.validation import check_is_f
 
 from optiretain.config import MODELS_DIR, SEED
 from optiretain.data.features import encode_features  # reuse encoder from Layer 2
 
 logger = logging.getLogger(__name__)
 
-# ── Hyperparameter search space (Layer 1 spec) ────────────────────────────────
+# ── Hyperparameter search space ────────────────────────────────
 
 _XGB_PARAMS_SPACE: dict[str, list[Any]] = {
     "max_depth": [3, 4, 5, 6],
@@ -290,8 +289,9 @@ def persist(
     # Persist calibrated model (this includes the fitted booster).
     dump({"calibrated": calibrated, "feature_names": feature_names}, MODEL_PATH)
 
-    # Persist raw (un-calibrated) booster for SHAP — TreeExplainer needs it.
-    dump({"booster": raw_model.get_booster()}, ARTIFACT_DIR / "risk_radar_raw.joblib")
+    # Persist raw (un-calibrated) XGBClassifier for SHAP — TreeExplainer requires
+    # the sklearn wrapper (not the raw Booster) with XGBoost ≥ 3.x / SHAP ≥ 0.48.
+    dump({"model": raw_model}, ARTIFACT_DIR / "risk_radar_raw.joblib")
 
     with open(METADATA_PATH, "w") as f:
         json.dump(metadata, f, indent=2)

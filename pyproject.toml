@@ -1,7 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/optiretain"]
+
 [project]
 name = "optiretain"
 version = "0.1.0"
-description = "Add your description here"
+description = "Causal-driven customer retention and revenue optimization"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -13,12 +20,14 @@ dependencies = [
     "pandas>=3.0.3",
     "pulp>=3.3.2",
     "pyarrow>=24.0.0",
-    "pytest>=9.0.3",
     "scikit-learn>=1.6.1",
     "scipy>=1.17.1",
     "shap>=0.48.0",
     "xgboost>=3.2.0",
 ]
+
+[project.scripts]
+optiretain = "optiretain.pipeline:run"
 
 [dependency-groups]
 dev = [

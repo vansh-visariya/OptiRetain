@@ -58,7 +58,7 @@ def segment_customers(
     cate_lb: Optional[np.ndarray] = None,
     *,
     p_churn_threshold: float = _P_CHURN_HIGH_DEFAULT,
-    uplift_eps: float = _UHLIFT_EPS_DEFAULT,
+    uplift_eps: float = _UPHLIFT_EPS_DEFAULT,
 ) -> SegmentationResult:
     """Assign each customer to a retention segment.
 
@@ -143,7 +143,7 @@ def filter_persuadable(
     df: pd.DataFrame,
     *,
     p_churn_threshold: float = _P_CHURN_HIGH_DEFAULT,
-    uplift_eps: float = _UHLIFT_EPS_DEFAULT,
+    uplift_eps: float = _UPHLIFT_EPS_DEFAULT,
 ) -> pd.DataFrame:
     """Filter DataFrame to only Persuadable customers (eligible for ILP).
 

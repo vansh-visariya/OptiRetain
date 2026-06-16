@@ -727,7 +727,7 @@ wheels = [
 [[package]]
 name = "optiretain"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "dowhy" },
     { name = "econml" },
@@ -737,7 +737,6 @@ dependencies = [
     { name = "pandas" },
     { name = "pulp" },
     { name = "pyarrow" },
-    { name = "pytest" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "shap" },
@@ -759,7 +758,6 @@ requires-dist = [
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "pulp", specifier = ">=3.3.2" },
     { name = "pyarrow", specifier = ">=24.0.0" },
-    { name = "pytest", specifier = ">=9.0.3" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "shap", specifier = ">=0.48.0" },

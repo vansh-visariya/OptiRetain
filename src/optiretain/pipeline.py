@@ -4,16 +4,6 @@ Usage::
 
     python -m optiretain.pipeline --budget 50000 --discount 0.20
 
-Each layer is implemented as it becomes available:
-
-- Layer 1 (data loading) — complete
-- Layer 2 (feature engineering) — complete
-- Layer 3 (risk radar / XGBoost + SHAP) — complete
-- Layer 4a (uplift engine / EconML DML) — complete
-- Layer 4b (customer segmentation) — complete
-- Layer 5 (ROI maximizer / PuLP ILP) — complete
-- Layer 6 (dashboard export + static frontend) — complete
-
 Run order & artifacts:
     1. data/loader.py           → DataFrame (raw churn dataset)
     2. data/features.py         → df_treated + X_encoded + encoder + treatment_meta
@@ -69,7 +59,7 @@ def run(
     t0 = time.time()
     results = {}
 
-    # ═══════════════════ Layer 1 — Data Loading ════════════════════════════════
+    # ═══════════════════ Data Loading ════════════════════════════════
     logger.info("=" * 60)
     logger.info("Layer 1 — Data Loading")
     logger.info("=" * 60)
@@ -82,7 +72,7 @@ def run(
 
     results["data"] = {"rows": df.shape[0], "columns": df.shape[1]}
 
-    # ═══════════════════ Layer 2 — Feature Engineering ═════════════════════════
+    # ═══════════════════ Feature Engineering ═════════════════════════
     logger.info("=" * 60)
     logger.info("Layer 2 — Feature Engineering")
     logger.info("=" * 60)
@@ -105,7 +95,7 @@ def run(
         "treatment_rate": float(df_treated["received_discount"].mean()),
     })
 
-    # ═══════════════════ Layer 3 — Risk Radar (XGBoost) ════════════════════════
+    # ═══════════════════ Risk Radar (XGBoost) ════════════════════════
     logger.info("=" * 60)
     logger.info("Layer 3 — Risk Radar (XGBoost + Calibration)")
     logger.info("=" * 60)
@@ -149,7 +139,7 @@ def run(
 
     results["shap"] = {"n_explained": len(shap_exps)}
 
-    # ═══════════════════ Layer 4a — Uplift Engine (EconML DML) ════════════════
+    # ═══════════════════ Uplift Engine (EconML DML) ════════════════
     logger.info("=" * 60)
     logger.info("Layer 4a — Uplift Engine (EconML DML)")
     logger.info("=" * 60)
@@ -165,15 +155,16 @@ def run(
     )
 
     logger.info("[L4a] CATE median=%.4f, uplift positive=%d%%",
-                cate_result.cate.median(), int(cate_result.uplift_positive_pct))
+                float(np.median(cate_result.cate)),
+                int(cate_result.metadata.get("uplift_positive_pct", 0) * 100))
 
     results["dml"] = {
-        "cate_median": cate_result.cate_median,
-        "uplift_positive_pct": cate_result.uplift_positive_pct,
+        "cate_median": cate_result.metadata.get("cate_median"),
+        "uplift_positive_pct": cate_result.metadata.get("uplift_positive_pct"),
         "method": cate_result.metadata.get("method", ""),
     }
 
-    # ═══════════════════ Layer 4b — Customer Segmentation ══════════════════════
+    # ═══════════════════ Customer Segmentation ══════════════════════
     logger.info("=" * 60)
     logger.info("Layer 4b — Customer Segmentation")
     logger.info("=" * 60)
@@ -196,7 +187,7 @@ def run(
 
     results["segmentation"] = seg_result.summary_counts.copy()
 
-    # ═══════════════════ Layer 5 — ROI Maximizer (PuLP ILP) ════════════════════
+    # ═══════════════════ ROI Maximizer (PuLP ILP) ════════════════════
     logger.info("=" * 60)
     logger.info("Layer 5 — ROI Maximizer (PuLP ILP Knapsack)")
     logger.info("=" * 60)
@@ -234,7 +225,7 @@ def run(
 
         results["allocation"] = {k: v for k, v in allocation_result.metrics.items()}
 
-    # ═══════════════════ Layer 6 — Dashboard Export ═════════════════════════════
+    # ═══════════════════ Dashboard Export ═════════════════════════════
     logger.info("=" * 60)
     logger.info("Layer 6 — Dashboard Export")
     logger.info("=" * 60)

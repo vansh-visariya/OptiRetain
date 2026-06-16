@@ -89,13 +89,19 @@ def explain_customers(
     expected_value = 0.0
     shap_values = None
 
-    # Load the raw booster for TreeExplainer.
+    # Load the raw XGBClassifier for TreeExplainer.
+    # XGBoost ≥ 3.x stores base_score as '[value]' (bracketed array format).
+    # SHAP 0.48 reads it via decode_ubjson_buffer; we patch that function
+    # to strip the brackets before SHAP calls float() on the value.
+    _apply_shap_xgb3_patch()
+
     booster_path = _RAW_BOOSTER_PATH
     if booster_path.exists():
         import joblib
         booster_data = joblib.load(booster_path)
-        booster = booster_data["booster"]
+        model = booster_data["model"]
 
+        booster = model.get_booster()
         explainer = shap.TreeExplainer(booster)
         shap_values = explainer.shap_values(X_arr)
         expected_value = explainer.expected_value
@@ -103,7 +109,7 @@ def explain_customers(
                      np.shape(shap_values), expected_value)
     else:
         # Fallback: approximate with permutation importance (slower, less exact).
-        logger.warning("Raw booster not found at %s — SHAP drivers unavailable.", booster_path)
+        logger.warning("Raw model not found at %s — SHAP drivers unavailable.", booster_path)
 
     explanations = []
     for i in range(len(customer_ids)):
@@ -193,16 +199,11 @@ def _extract_drivers(
 
     # Aggregate SHAP by original feature name.
     aggr_shap: dict[str, float] = {}
-    for enc_col in enc_columns:
-        if enc_col not in feature_to_original or enc_col >= len(shap_row):
+    for idx, enc_col in enumerate(enc_columns):
+        if enc_col not in feature_to_original or idx >= len(shap_row):
             continue
-        orig_name = feature_to_original.get(enc_col, enc_col)
-        shap_val = float(shap_row[enc_columns.index(enc_col)]) if enc_col in enc_columns else 0.0
-        # Actually get SHAP value by index matching
-        idx = enc_columns.index(enc_col) if enc_col in enc_columns else -1
-        if idx >= 0:
-            shap_val = float(shap_row[idx])
-        aggr_shap[orig_name] = aggr_shap.get(orig_name, 0.0) + shap_val
+        orig_name = feature_to_original[enc_col]
+        aggr_shap[orig_name] = aggr_shap.get(orig_name, 0.0) + float(shap_row[idx])
 
     # Get raw feature value at this row for display.
     X_arr = _to_array(X_encoded)
@@ -224,6 +225,45 @@ def _extract_drivers(
     drivers.sort(key=lambda d: abs(d.shap), reverse=True)
     half = max(top_k // 2, 1)
     return drivers[:top_k]
+
+
+def _apply_shap_xgb3_patch() -> None:
+    """Monkey-patch SHAP to handle XGBoost ≥ 3.x ``base_score`` format.
+
+    XGBoost ≥ 3.x serialises ``base_score`` as a bracketed array literal
+    (e.g. ``'[2.653532E-1]'``) inside ``save_raw(raw_format='ubj')``.
+    SHAP 0.48's ``XGBTreeModelLoader`` decodes the raw bytes with its own
+    ``decode_ubjson_buffer`` helper and then calls
+    ``float(learner_model_param["base_score"])`` — which raises
+    ``ValueError`` on the bracketed string.
+
+    We wrap ``shap.explainers._tree.decode_ubjson_buffer`` to post-process
+    the decoded dict and strip brackets from ``base_score`` wherever they
+    appear in the ``learner_model_param`` section.  The patch is idempotent
+    and only applied once per interpreter session.
+    """
+    from shap.explainers import _tree as _shap_tree
+
+    if getattr(_shap_tree, "_xgb3_decode_patched", False):
+        return  # already applied
+
+    _original_decode = _shap_tree.decode_ubjson_buffer
+
+    def _safe_decode(fp):
+        result = _original_decode(fp)
+        # Strip bracketed base_score deep inside the decoded model dict.
+        try:
+            param = result["learner"]["learner_model_param"]
+            bs = str(param.get("base_score", ""))
+            if bs.startswith("[") and bs.endswith("]"):
+                param["base_score"] = bs[1:-1]
+        except (KeyError, TypeError, AttributeError):
+            pass
+        return result
+
+    _shap_tree.decode_ubjson_buffer = _safe_decode
+    _shap_tree._xgb3_decode_patched = True  # type: ignore[attr-defined]
+    logger.debug("Applied XGBoost 3.x / SHAP 0.48 decode_ubjson_buffer patch.")
 
 
 # Known categorical features (from features.py) for mapping.

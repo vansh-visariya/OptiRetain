@@ -142,7 +142,7 @@ def fit_dml_cate(
         n_estimators=n_estimators,
         min_samples_leaf=20,
         random_state=random_state,
-        max_samples=0.8,  # subsample for speed on ~7k rows
+        max_samples=0.45,  # must be ≤ 0.5 when inference=True (EconML GRF constraint)
     )
 
     est.fit(Y=Y, T=T, X=X, W=W)

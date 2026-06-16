@@ -1,0 +1,15 @@
+{
+  "method": "CausalForestDML",
+  "n_estimators": 300,
+  "cv": 5,
+  "n_samples": 7043,
+  "n_features_x": 46,
+  "n_features_w": 0,
+  "treatment_rate": 0.6504330540962658,
+  "churn_rate": 0.2653698707936959,
+  "cate_median": -0.010941724975976928,
+  "cate_std": 0.026931579261438077,
+  "uplift_median": 0.010941724975976928,
+  "uplift_positive_pct": 0.71219650717024,
+  "nuisance_r2_y": null
+}

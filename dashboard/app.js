@@ -22,14 +22,23 @@
 
     async function loadDashboard() {
         try {
-            const resp = await fetch("customers.json");
-            const data = await resp.json();
+            let data;
+            if (window.__OPTIRETAIN_DATA__) {
+                // Inlined via data.js — works with file:// and HTTP.
+                data = window.__OPTIRETAIN_DATA__;
+            } else {
+                // Fallback: fetch over HTTP (requires a web server).
+                const resp = await fetch("customers.json");
+                if (!resp.ok) throw new Error("HTTP " + resp.status);
+                data = await resp.json();
+            }
             allCustomers = data.customers || [];
             renderKPIs(data.metadata);
             applyFilters();
         } catch (err) {
             document.getElementById("table-body").innerHTML =
-                '<tr><td colspan="8" class="error">Failed to load dashboard data. Ensure customers.json is in the same directory.</td></tr>';
+                '<tr><td colspan="8" class="error">Failed to load dashboard data. ' +
+                'Run the pipeline first, or serve the dashboard folder over HTTP.</td></tr>';
             console.error("Dashboard load error:", err);
         }
     }
