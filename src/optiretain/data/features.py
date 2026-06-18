@@ -54,9 +54,10 @@ _CATEGORICAL_FEATURES = [
     "PaymentMethod",
 ]
 
-# Expected customer lifetime in months — the source dataset's CLTV implies
-# roughly 65 months total. We use a conservative 24-month remaining window.
-_EXPECTED_CUSTOMER_LIFETIME: int = 60
+# Forward-looking horizon for CLV estimation (months).
+# A 24-month look-ahead is standard in telecom churn analytics: it gives the
+# business a concrete window to see ROI from retention spend.
+_CLV_FORWARD_HORIZON = 24
 
 
 # ── 1. Imputation ────────────────────────────────────────────────────────────
@@ -118,13 +119,15 @@ def compute_clv(df: pd.DataFrame) -> pd.DataFrame:
 
     * ``cltv_raw`` — exact copy of the dataset's pre-computed CLTV (preserved
       as a feature for Layers 1–2 where it encodes customer value).
-    * ``clv_computed`` — transparent proxy ``MonthlyCharges × max(expected_remaining, 1)``
-      intended for Layer 3 (PuLP optimizer) where auditability is critical.
+    * ``clv_computed`` — transparent proxy ``max(TotalCharges, MonthlyCharges ×
+      CLV_FORWARD_HORIZON)``.  Using ``max()`` keeps CLV monotonically
+      non-decreasing with tenure (longer customers are worth more), avoiding the
+      perverse penalty that penalises high-tenure loyalists.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Must have ``CLTV``, ``MonthlyCharges``, and ``tenure`` columns.
+        Must have ``CLTV``, ``MonthlyCharges``, and ``TotalCharges`` columns.
 
     Returns
     -------
@@ -138,16 +141,20 @@ def compute_clv(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    for col in ["CLTV", "MonthlyCharges", "tenure"]:
+    for col in ["CLTV", "MonthlyCharges", "TotalCharges"]:
         if col not in df.columns:
             raise ValueError(f"Column '{col}' required for CLV computation.")
 
     # Raw CLTV preserved as-is from source.
     df["cltv_raw"] = df["CLTV"].copy()
 
-    # Transparent computed proxy.
-    expected_remaining = _EXPECTED_CUSTOMER_LIFETIME - df["tenure"]
-    df["clv_computed"] = df["MonthlyCharges"] * expected_remaining.clip(lower=1)
+    # Transparent computed proxy using an auditable formula.
+    #   floor     — what they've already paid (honest baseline)
+    #   forward   — MonthlyCharges × 24-month look-ahead (ROI window)
+    # The max ensures CLV is monotonically non-decreasing with tenure.
+    past_value = df["TotalCharges"]
+    forward_value = df["MonthlyCharges"] * _CLV_FORWARD_HORIZON
+    df["clv_computed"] = np.maximum(past_value, forward_value)
 
     return df
 

@@ -35,7 +35,8 @@ def make_mock_df(n: int = 200, seed: int = 42) -> pd.DataFrame:
     tenure = rng.integers(0, 73, size=n)
     monthly = rng.uniform(18.0, 120.0, size=n)
     total = monthly * tenure + rng.normal(0, 50, size=n)  # approximate
-    cltv = total + monthly * (60 - tenure) + rng.integers(0, 500, size=n)
+    forward = monthly * 24                               # 24-month look-ahead horizon
+    cltv = np.maximum(total, forward) + rng.integers(0, 500, size=n)
 
     cat_cols = {
         "gender": ["Male", "Female"],

@@ -278,7 +278,7 @@ Key hyperparameters (also overridable via `pipeline.py` CLI):
 - `n_estimators` (XGBoost): 600
 - `n_estimators` (causal forest): 300
 - `cv` (DML cross-folding): 5
-- `_EXPECTED_CUSTOMER_LIFETIME`: 60 months
+- `_CLV_FORWARD_HORIZON`: 24 months (retention ROI window)
 
 ## 📦 Dependency Matrix
 
